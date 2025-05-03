@@ -18,7 +18,7 @@ private:
     int mFrameWidth;
     int mFrameHeight;
     float mRange;
-    float mSwat;
+    float mSwath;
     int mMinIntensity;
     int mMaxIntensity;
     QColor mFgColor;

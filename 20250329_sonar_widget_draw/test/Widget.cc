@@ -13807,7 +13807,7 @@ Widget::Widget(QWidget* pParent) : QWidget(pParent)
     mFrameWidth = 256;
     mFrameHeight = 1024;
     mRange = 10.0f;
-    mSwat = 120.0f;
+    mSwath = 120.0f;
     mMinIntensity = 0;
     mMaxIntensity = 130;
     mFgColor = Qt::white;
@@ -13863,7 +13863,7 @@ Widget::paintEvent(QPaintEvent* /*event*/)
                 intensity = mMaxIntensity;
 
             float t = float(intensity - mMinIntensity) / std::max(1, mMaxIntensity - mMinIntensity);
-            float angle = ((float)x / mFrameWidth) * mSwat - (mSwat / 2.0f);
+            float angle = ((float)x / mFrameWidth) * mSwath - (mSwath / 2.0f);
             float rad = qDegreesToRadians(angle);
             QPointF point = center + QPointF(dist * qSin(rad), -dist * qCos(rad));
 
@@ -13903,11 +13903,11 @@ Widget::paintEvent(QPaintEvent* /*event*/)
         QRectF arcRect(center.x() - radius, center.y() - radius, radius * 2, radius * 2);
 
         // 円弧を描画（QPainter::drawArc）
-        painter.drawArc(arcRect, (90 - mSwat / 2) * 16, mSwat * 16);
+        painter.drawArc(arcRect, (90 - mSwath / 2) * 16, mSwath * 16);
 
         // ラベル描画（左右両端）
-        float angleLeft = qDegreesToRadians(-mSwat / 2);
-        float angleRight = qDegreesToRadians(mSwat / 2);
+        float angleLeft = qDegreesToRadians(-mSwath / 2);
+        float angleRight = qDegreesToRadians(mSwath / 2);
 
         QPointF left = center + QPointF(radius * qSin(angleLeft), -radius * qCos(angleLeft));
         QPointF right = center + QPointF(radius * qSin(angleRight), -radius * qCos(angleRight));
@@ -13921,7 +13921,7 @@ Widget::paintEvent(QPaintEvent* /*event*/)
     // 放射角線（-60°, -30°, 0°, 30°, 60°）
     for (int i = 0; i <= 4; ++i)
     {
-        float angle = -mSwat / 2 + (mSwat / 4.0f) * i;
+        float angle = -mSwath / 2 + (mSwath / 4.0f) * i;
         float rad = qDegreesToRadians(angle);
         QPointF end = center + QPointF(mRange * pixelsPerMeter * qSin(rad),
                                        -mRange * pixelsPerMeter * qCos(rad));
