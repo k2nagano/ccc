@@ -1,19 +1,13 @@
 #include "SonarPlayer.hh"
-#include <QDragEnterEvent>
-#include <QDropEvent>
-#include <QFileInfo>
-#include <QFormLayout>
-#include <QHBoxLayout>
-#include <QMimeData>
-#include <QSettings>
-#include <QStyle>
-#include <QTimer>
-#include <QVBoxLayout>
 
-SonarPlayer::SonarPlayer(const QString& filePath, float range, int minI, int maxI)
-// : mFilePath(filePath)
+// explicit
+SonarPlayer::SonarPlayer(const QString& mkvPath, double swath, double range, int minIntensity,
+                         int maxIntensity, QWidget* pParent)
+    : QWidget(pParent), mSwath(swath), mRange(range), mMinIntensity(minIntensity),
+      mMaxIntensity(maxIntensity), mForegroundColor(Qt::white), mBackgroundColor(Qt::black),
+      mMinIntensityColor(Qt::yellow), mMaxIntensityColor(Qt::red)
+
 {
-    printf("%f %d %d\n", range, minI, maxI);
     setAcceptDrops(true);
 
     // コンストラクタの初めで、まずウィジェット生成
@@ -63,7 +57,7 @@ SonarPlayer::SonarPlayer(const QString& filePath, float range, int minI, int max
     mpSpinBoxMinIntensity = new QSpinBox;
     mpSpinBoxMaxIntensity = new QSpinBox;
 
-    mpDoubleSpinBoxSwath->setValue(120.0);
+    mpDoubleSpinBoxSwath->setValue(swath);
     mpDoubleSpinBoxRange->setValue(range);
     mpDoubleSpinBoxSwath->setRange(1.0, 180.0);
     mpDoubleSpinBoxRange->setRange(1.0, 100.0);
@@ -73,11 +67,11 @@ SonarPlayer::SonarPlayer(const QString& filePath, float range, int minI, int max
     connect(mpDoubleSpinBoxRange, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             [=](double value) {
                 mpSonarWidget->setRange(value);
-                mpSonarThread->setParams(minI, maxI);
+                mpSonarThread->setParams(minIntensity, maxIntensity);
             });
 
-    mpSpinBoxMinIntensity->setValue(minI);
-    mpSpinBoxMaxIntensity->setValue(maxI);
+    mpSpinBoxMinIntensity->setValue(minIntensity);
+    mpSpinBoxMaxIntensity->setValue(maxIntensity);
     connect(mpSpinBoxMinIntensity, QOverload<int>::of(&QSpinBox::valueChanged), this,
             [=](int value) { mpSonarThread->setParams(value, mpSpinBoxMaxIntensity->value()); });
     connect(mpSpinBoxMaxIntensity, QOverload<int>::of(&QSpinBox::valueChanged), this,
@@ -160,19 +154,19 @@ SonarPlayer::SonarPlayer(const QString& filePath, float range, int minI, int max
     mpSliderFramePosition = new QSlider(Qt::Horizontal);
     connect(mpSliderFramePosition, &QSlider::sliderMoved, this, &SonarPlayer::setFramePosition);
 
-    mpLineEditFilePath = new QLineEdit(filePath);
-    mpLineEditFilePath->setReadOnly(true);
-    mpLineEditFilePath->setFocusPolicy(Qt::ClickFocus);
-    mpLineEditFilePath->setStyleSheet("background: palette(window);");
+    mpLineEditMkvPath = new QLineEdit(mkvPath);
+    mpLineEditMkvPath->setReadOnly(true);
+    mpLineEditMkvPath->setFocusPolicy(Qt::ClickFocus);
+    mpLineEditMkvPath->setStyleSheet("background: palette(window);");
 
     mainLayout->addWidget(mpSliderFramePosition);
-    mainLayout->addWidget(mpLineEditFilePath);
+    mainLayout->addWidget(mpLineEditMkvPath);
 
     setLayout(mainLayout);
 
     mpSonarThread = new SonarThread;
-    mpSonarThread->setParams(minI, maxI);
-    mpSonarThread->setFilePath(filePath);
+    mpSonarThread->setParams(minIntensity, maxIntensity);
+    mpSonarThread->setFilePath(mkvPath);
     mpSliderFramePosition->setRange(0, mpSonarThread->totalFrameCount());
 
     connect(mpSonarThread, &SonarThread::frameReady, this, &SonarPlayer::updateFrame);
@@ -180,65 +174,12 @@ SonarPlayer::SonarPlayer(const QString& filePath, float range, int minI, int max
     connect(mpSonarThread, &SonarThread::playbackStopped, this,
             &SonarPlayer::handlePlaybackStopped);
 
-    QSettings s("uro_sonar", "sonar_player");
-    if (s.contains("Swath"))
-    {
-        double sw = s.value("Swath").toDouble();
-        mpSonarWidget->setSwath(sw);
-        mpDoubleSpinBoxSwath->setValue(sw);
-    }
-    if (s.contains("Range"))
-    {
-        double rg = s.value("Range").toDouble();
-        mpSonarWidget->setRange(rg);
-        mpDoubleSpinBoxRange->setValue(rg);
-    }
-    if (s.contains("MinIntensity"))
-    {
-        int mi = s.value("MinIntensity").toInt();
-        mpSonarWidget->setMinIntensity(mi);
-        mpSpinBoxMinIntensity->setValue(mi);
-    }
-    if (s.contains("MaxIntensity"))
-    {
-        int ma = s.value("MaxIntensity").toInt();
-        mpSonarWidget->setMaxIntensity(ma);
-        mpSpinBoxMaxIntensity->setValue(ma);
-    }
-    if (s.contains("MinIntensityColor"))
-    {
-        QColor c = s.value("MinIntensityColor").value<QColor>();
-        mMinIntensityColor = c;
-        mpSonarWidget->setMinIntensityColor(c);
-        // ボタンの表示色も更新する
-        mpPushButtonMinIntensityColor->setStyleSheet(QString("background:%1").arg(c.name()));
-    }
-    if (s.contains("MaxIntensityColor"))
-    {
-        QColor c = s.value("MaxIntensityColor").value<QColor>();
-        mMinIntensityColor = c;
-        mpSonarWidget->setMaxIntensityColor(c);
-        // ボタンの表示色も更新する
-        mpPushButtonMaxIntensityColor->setStyleSheet(QString("background:%1").arg(c.name()));
-    }
-    if (s.contains("ForegroundColor"))
-    {
-        QColor c = s.value("ForegroundColor").value<QColor>();
-        mForegroundColor = c;
-        mpSonarWidget->setForegroundColor(c);
-        // ボタンの表示色も更新する
-        mpPushButtonForegroundColor->setStyleSheet(QString("background:%1").arg(c.name()));
-    }
-    if (s.contains("BackgroundColor"))
-    {
-        QColor c = s.value("BackgroundColor").value<QColor>();
-        mBackgroundColor = c;
-        mpSonarWidget->setBackgroundColor(c);
-        // ボタンの表示色も更新する
-        mpPushButtonBackgroundColor->setStyleSheet(QString("background:%1").arg(c.name()));
-    }
-
     mpSonarThread->start(); // 初期ファイルを自動再生
+}
+
+// virtual
+SonarPlayer::~SonarPlayer()
+{
 }
 
 void
@@ -284,7 +225,7 @@ SonarPlayer::setFramePosition(int pos)
 void
 SonarPlayer::handleFileChanged(const QString& newPath)
 {
-    mpLineEditFilePath->setText(newPath);
+    mpLineEditMkvPath->setText(newPath);
     mpSliderFramePosition->setValue(0);
     mpSliderFramePosition->setMaximum(mpSonarThread->totalFrameCount());
 }
@@ -295,20 +236,6 @@ SonarPlayer::handlePlaybackStopped(int frameIndex)
     mpSliderFramePosition->setValue(frameIndex);
 }
 
-void
-SonarPlayer::closeEvent(QCloseEvent* event)
-{
-    QSettings s("uro_sonar", "sonar_player");
-    s.setValue("Swath", mpSonarWidget->swath());
-    s.setValue("Range", mpSonarWidget->range());
-    s.setValue("MinIntensity", mpSonarWidget->minIntensity());
-    s.setValue("MaxIntensity", mpSonarWidget->maxIntensity());
-    s.setValue("MinIntensityColor", mpSonarWidget->minIntensityColor());
-    s.setValue("MaxIntensityColor", mpSonarWidget->maxIntensityColor());
-    s.setValue("ForegroundColor", mpSonarWidget->foregroundColor());
-    s.setValue("BackgroundColor", mpSonarWidget->backgroundColor());
-    QWidget::closeEvent(event);
-}
 void
 SonarPlayer::dragEnterEvent(QDragEnterEvent* event)
 {

@@ -2,7 +2,8 @@
 #include <QPainter>
 #include <QtMath>
 
-SonarWidget::SonarWidget(QWidget* parent) : QWidget(parent)
+// explicit
+SonarWidget::SonarWidget(QWidget* pParent) : QWidget(pParent)
 {
     mSwath = 120.0;
     mRange = 30.0;
@@ -12,6 +13,11 @@ SonarWidget::SonarWidget(QWidget* parent) : QWidget(parent)
     mMaxIntensityColor = Qt::red;
     mForegroundColor = Qt::green;
     mBackgroundColor = Qt::black;
+}
+
+// virtual
+SonarWidget::~SonarWidget()
+{
 }
 
 void

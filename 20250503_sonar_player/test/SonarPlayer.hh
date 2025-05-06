@@ -1,25 +1,19 @@
-#pragma once
+#if !defined(SONAR_PLAYER_HH)
+#define SONAR_PLAYER_HH
 
 #include "SonarThread.hh"
 #include "SonarWidget.hh"
-#include <QDoubleSpinBox>
-#include <QLabel>
-#include <QLineEdit>
-#include <QPushButton>
-#include <QSlider>
-#include <QSpinBox>
-#include <QString>
-#include <QWidget>
+#include <QtWidgets>
 
 class SonarPlayer : public QWidget
 {
     Q_OBJECT
 public:
-    explicit SonarPlayer(const QString& filePath, float range, int min_intensity,
-                         int max_intensity);
+    explicit SonarPlayer(const QString& mkvPath, double swath = 120.0, double range = 30.0,
+                         int minIntensity = 0, int maxIntensity = 255, QWidget* pParent = nullptr);
+    virtual ~SonarPlayer();
 
 protected:
-    void closeEvent(QCloseEvent* event) override;
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dropEvent(QDropEvent* event) override;
 
@@ -35,9 +29,10 @@ private slots:
     void handlePlaybackStopped(int frameIndex);
 
 private:
-    SonarWidget* mpSonarWidget;
     SonarThread* mpSonarThread;
+    SonarWidget* mpSonarWidget;
 
+private:
     QPushButton* mpPushButtonPlay;
     QPushButton* mpPushButtonPause;
     QPushButton* mpPushButtonStop;
@@ -51,11 +46,18 @@ private:
     QPushButton* mpPushButtonMaxIntensityColor;
     QPushButton* mpPushButtonForegroundColor;
     QPushButton* mpPushButtonBackgroundColor;
+    QSlider* mpSliderFramePosition;
+    QLineEdit* mpLineEditMkvPath;
+
+private:
+    double mSwath;
+    double mRange;
+    int mMinIntensity;
+    int mMaxIntensity;
     QColor mForegroundColor;
     QColor mBackgroundColor;
     QColor mMinIntensityColor;
     QColor mMaxIntensityColor;
-    QSlider* mpSliderFramePosition;
-    QLineEdit* mpLineEditFilePath;
-    // QString mFilePath;
 };
+
+#endif // #if !defined(SONAR_PLAYER_HH)

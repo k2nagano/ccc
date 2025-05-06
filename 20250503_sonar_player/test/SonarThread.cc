@@ -1,6 +1,7 @@
 #include "SonarThread.hh"
 
-SonarThread::SonarThread(QObject* parent) : QThread(parent)
+// explicit
+SonarThread::SonarThread(QObject* pParent) : QThread(pParent)
 {
     mMinIntensity;
     mMaxIntensity;
@@ -10,6 +11,11 @@ SonarThread::SonarThread(QObject* parent) : QThread(parent)
     mState = PlaybackState::Stop;
     mIsRunning = true;
     mIsPending = false;
+}
+
+// virtual
+SonarThread::~SonarThread()
+{
 }
 
 void

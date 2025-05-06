@@ -1,9 +1,11 @@
+#include "SonarPlayer.hh"
 #include <QApplication>
 #include <QCommandLineParser>
 #include <QFileDialog>
-#include "SonarPlayer.hh"
 
-int main(int argc, char *argv[]) {
+int
+main(int argc, char* argv[])
+{
     QApplication app(argc, argv);
     app.setApplicationName("Sonar MKV Player");
 
@@ -19,11 +21,16 @@ int main(int argc, char *argv[]) {
 
     QString filePath;
     const QStringList args = parser.positionalArguments();
-    if (!args.isEmpty()) {
+    if (!args.isEmpty())
+    {
         filePath = args[0];
-    } else {
-        filePath = QFileDialog::getOpenFileName(nullptr, "MKVファイルを選択", "", "動画ファイル (*.mkv)");
-        if (filePath.isEmpty()) return 0;
+    }
+    else
+    {
+        filePath =
+            QFileDialog::getOpenFileName(nullptr, "MKVファイルを選択", "", "動画ファイル (*.mkv)");
+        if (filePath.isEmpty())
+            return 0;
     }
 
     float range = parser.value("range").toFloat();

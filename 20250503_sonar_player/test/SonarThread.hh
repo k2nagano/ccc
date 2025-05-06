@@ -1,4 +1,5 @@
-#pragma once
+#if !defined(SONAR_THREAD_HH)
+#define SONAR_THREAD_HH
 
 #include <QColorDialog>
 #include <QImage>
@@ -19,8 +20,10 @@ public:
         FastForward,
         Rewind
     };
+public:
+    explicit SonarThread(QObject* pParent = nullptr);
+    virtual ~SonarThread();
 
-    explicit SonarThread(QObject* parent = nullptr);
     void run() override;
 
     void setParams(int minI, int maxI);
@@ -61,3 +64,5 @@ private:
     bool mIsPending;
     QString mPendingFilePath;
 };
+
+#endif // #if !defined(SONAR_THREAD_HH)

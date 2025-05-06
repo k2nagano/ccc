@@ -1,14 +1,16 @@
-#pragma once
-#include <QColor>
-#include <QImage>
-#include <QWidget>
-#include <chrono>
+#if !defined(SONAR_WIDGET_HH)
+#define SONAR_WIDGET_HH
+
+#include <QtWidgets>
 
 class SonarWidget : public QWidget
 {
     Q_OBJECT
 public:
-    explicit SonarWidget(QWidget* parent = nullptr);
+    explicit SonarWidget(QWidget* pParent = nullptr);
+    virtual ~SonarWidget();
+
+public:
     void setFrame(const QImage& frame);
     void setSwath(float swath);
     void setRange(float range);
@@ -43,3 +45,5 @@ private:
     QColor mForegroundColor;
     QColor mBackgroundColor;
 };
+
+#endif // #if !defined(SONAR_WIDGET_HH)
