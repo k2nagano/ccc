@@ -209,10 +209,14 @@ class SonarWidget(QWidget):
         valid = (r <= radius) & (theta >= -half_sw_rad) & (theta <= half_sw_rad)
 
         # normalize into your frame’s index space
-        n_beam, n_range = self.frame.shape
-        # map r → [0…n_range-1], theta → [0…n_beam-1]
-        map_x = (r / radius * (n_range - 1)).astype(np.float32)
-        map_y = ((theta + half_sw_rad) / (2 * half_sw_rad) * (n_beam - 1)).astype(np.float32)
+        # 1) unpack correctly
+        n_range, n_beam = self.frame.shape   # rows=range, cols=beams
+
+        # 2) compute map_x (columns) from theta → beam index
+        map_x = ((theta + half_sw_rad) / (2*half_sw_rad) * (n_beam - 1)).astype(np.float32)
+
+        # 3) compute map_y (rows) from r → range index
+        map_y = (r / radius * (n_range - 1)).astype(np.float32)
 
         # remap with linear interpolation in C++
         intensity = cv2.remap(
