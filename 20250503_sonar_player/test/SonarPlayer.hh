@@ -17,6 +17,11 @@ protected:
     void dragEnterEvent(QDragEnterEvent* event) override;
     void dropEvent(QDropEvent* event) override;
 
+protected:
+    // キー操作を受け取る
+    void keyPressEvent(QKeyEvent* event) override;
+    void keyReleaseEvent(QKeyEvent* event) override;
+
 private slots:
     void play();
     void pause();
@@ -58,6 +63,15 @@ private:
     QColor mBackgroundColor;
     QColor mMinIntensityColor;
     QColor mMaxIntensityColor;
+
+private:
+    // Space→Play/Pause 保持用
+    enum class Mode
+    {
+        Play,
+        Pause
+    };
+    Mode mMaintainedMode = Mode::Play;
 };
 
 #endif // #if !defined(SONAR_PLAYER_HH)

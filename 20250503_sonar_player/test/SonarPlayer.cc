@@ -9,6 +9,8 @@ SonarPlayer::SonarPlayer(const QString& mkvPath, double swath, double range, int
 
 {
     setAcceptDrops(true);
+    // キー操作を受け取れるように
+    setFocusPolicy(Qt::StrongFocus);
 
     // コンストラクタの初めで、まずウィジェット生成
     mpSonarWidget = new SonarWidget;
@@ -254,5 +256,56 @@ SonarPlayer::dropEvent(QDropEvent* event)
         {
             mpSonarThread->setFilePath(newFile);
         }
+    }
+}
+
+void
+SonarPlayer::keyPressEvent(QKeyEvent* event)
+{
+    if (event->isAutoRepeat())
+        return;
+
+    switch (event->key())
+    {
+    case Qt::Key_Space:
+        if (mMaintainedMode == Mode::Play)
+        {
+            mMaintainedMode = Mode::Pause;
+            mpSonarThread->pause();
+        }
+        else
+        {
+            mMaintainedMode = Mode::Play;
+            mpSonarThread->play();
+        }
+        break;
+    case Qt::Key_Right:
+        mpSonarThread->fastForward();
+        break;
+    case Qt::Key_Left:
+        mpSonarThread->rewind();
+        break;
+    default:
+        QWidget::keyPressEvent(event);
+    }
+}
+
+void
+SonarPlayer::keyReleaseEvent(QKeyEvent* event)
+{
+    if (event->isAutoRepeat())
+        return;
+
+    if (event->key() == Qt::Key_Right || event->key() == Qt::Key_Left)
+    {
+        // 離せば元の再生／一時停止状態に戻す
+        if (mMaintainedMode == Mode::Play)
+            mpSonarThread->play();
+        else
+            mpSonarThread->pause();
+    }
+    else
+    {
+        QWidget::keyReleaseEvent(event);
     }
 }

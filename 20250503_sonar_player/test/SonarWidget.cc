@@ -50,8 +50,13 @@ SonarWidget::paintEvent(QPaintEvent*)
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing);
 
-    QPointF center(width() / 2, height());
-    int radius = qMin(width(), height());
+    // 上部余白 20px
+    const int marginTop = 20;
+    painter.fillRect(rect(), mBackgroundColor);
+    painter.translate(0, marginTop);
+
+    QPointF center(width() * 0.5, (height() - marginTop));
+    int radius = qMin(width(), height() - marginTop);
 
     for (int x = 0; x < mFrame.width(); ++x)
     {
@@ -82,6 +87,42 @@ SonarWidget::paintEvent(QPaintEvent*)
             painter.drawPoint(point);
         }
     }
+
+    // ────────────── 目盛り付き円弧 ──────────────
+    // 間隔をレンジに応じて選択
+    int step;
+    if (mRange <= 5.0f)
+        step = 1;
+    else if (mRange <= 10.0f)
+        step = 2;
+    else if (mRange <= 100.0f)
+        step = 10;
+    else
+        step = 50;
+    painter.setPen(mForegroundColor);
+    for (int d = step; d <= int(mRange); d += step)
+    {
+        float dist = float(d) / mRange * radius;
+        QRectF arcRect(center.x() - dist, center.y() - dist, dist * 2, dist * 2);
+        // Qt::drawArc は 1/16 度単位、反時計回りなので符号反転
+        painter.drawArc(arcRect, int((90 + mSwath / 2) * 16), -int(mSwath * 16));
+        // 両端に数値
+        for (float angleSign : {-mSwath / 2.0f, mSwath / 2.0f})
+        {
+            float rad = qDegreesToRadians(angleSign);
+            QPointF pt = center + QPointF(dist * qSin(rad), -dist * qCos(rad));
+            painter.drawText(pt, QString::number(d));
+        }
+    }
+
+    // ────────────── テキスト描画 ──────────────
+    QFontMetrics fm(painter.font());
+    QString txt1 = QString("Min Intensity=%1").arg(mMinIntensity);
+    QString txt2 = QString("Max Intensity=%1").arg(mMaxIntensity);
+    int w = qMax(fm.horizontalAdvance(txt1), fm.horizontalAdvance(txt2));
+    int x = width() - w - 5;
+    painter.drawText(x, fm.ascent(), txt1);
+    painter.drawText(x, fm.height() + fm.ascent(), txt2);
 }
 
 QSize
