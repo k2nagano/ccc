@@ -364,6 +364,10 @@ class SonarPlayer(QWidget):
         self.setAcceptDrops(True)
         self.thread = SonarThread()
         self.widget = SonarWidget()
+        # キーボードイベントを受け取る
+        self.setFocusPolicy(Qt.StrongFocus)
+        # Spaceキーで切り替える「再生 or 一時停止」の状態を保持
+        self._maintained_mode = 'play'
         # apply parameters
         self.widget.swath = args.swath
         self.widget.range = args.range
@@ -526,6 +530,43 @@ class SonarPlayer(QWidget):
             self.thread.stop()
             self.thread.wait()
         event.accept()
+
+    def keyPressEvent(self, event):
+        # 自動リピートは無視
+        if event.isAutoRepeat():
+            return
+
+        if event.key() == Qt.Key_Space:
+            # 再生<->一時停止をトグル
+            if self._maintained_mode == 'play':
+                self._maintained_mode = 'pause'
+                self.thread.pause()
+            else:
+                self._maintained_mode = 'play'
+                self.thread.play()
+
+        elif event.key() == Qt.Key_Right:
+            # 右キー押下中は早送り
+            self.thread.fast_forward()
+
+        elif event.key() == Qt.Key_Left:
+            # 左キー押下中は巻き戻し
+            self.thread.rewind()
+        else:
+            super().keyPressEvent(event)
+
+    def keyReleaseEvent(self, event):
+        if event.isAutoRepeat():
+            return
+
+        # 左右キーを離したら、以前の再生／一時停止状態に戻す
+        if event.key() in (Qt.Key_Right, Qt.Key_Left):
+            if self._maintained_mode == 'play':
+                self.thread.play()
+            else:
+                self.thread.pause()
+        else:
+            super().keyReleaseEvent(event)
 
 if __name__=='__main__':
     args = parse_args()
