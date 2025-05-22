@@ -7,22 +7,24 @@ from datetime import datetime
 import sys
 import time
 import argparse
-from datetime import datetime, timedelta
+from datetime import datetime
 from PySide2.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QColorDialog,
-    QPushButton, QDoubleSpinBox, QLineEdit, QSlider, QFileDialog, QLabel, QStyle
+    QPushButton, QSpinBox, QDoubleSpinBox, QLineEdit, QSlider, QFileDialog, QLabel, QStyle
 )
 from PySide2.QtCore import QThread, Signal, Slot, Qt, QRectF, QPointF, QTimer
-from PySide2.QtGui import QPainter, QColor, QFont, QImage, QPen, QPainterPath
+from PySide2.QtGui import QPainter, QColor, QImage, QPen
 
+
+SCALE_RATIO = 0.99
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Sonar MKV Player")
     parser.add_argument('-m', '--mkv', type=str, help='Sonar data MKV file path')
     parser.add_argument('-s', '--swath', type=float, default=120.0, help='Fan opening angle [deg]')
     parser.add_argument('-r', '--range', type=float, default=30.0, help='Sonar exploration range (m)')
-    parser.add_argument('-i', '--min-intensity', type=float, default=0.0, help='Minimum intensity for display')
-    parser.add_argument('-x', '--max-intensity', type=float, default=255.0, help='Maximum intensity for display')
+    parser.add_argument('-i', '--min-intensity', type=int, default=0, help='Minimum intensity for display')
+    parser.add_argument('-x', '--max-intensity', type=int, default=255, help='Maximum intensity for display')
     return parser.parse_args()
 
 
@@ -115,18 +117,19 @@ class SonarThread(QThread):
 class SonarWidget(QWidget):
     def __init__(self):
         super().__init__()
+        self.setMinimumSize(720, 480)
         self.frame = None
         self.base_timestamp = 0.0
         self.timestamp = 0.0
         self.swath = 120.0
         self.range = 30.0
-        self.min_intensity = 0.0
-        self.max_intensity = 255.0
+        self.min_intensity = 0
+        self.max_intensity = 255
         self.min_color = QColor(255, 255, 0)
         self.max_color = QColor(255, 0, 0)
         self.foreground_color = QColor(0, 0, 0)
         self.background_color = QColor(255, 255, 255)
-        self.top_margin = 30
+        self.top_margin = 20
         self.center = None
         self.radius = 0
         self.image = None
@@ -186,7 +189,7 @@ class SonarWidget(QWidget):
 
         # compute center and pixel‐radius so the fan fits in the widget
         cx, cy = w * 0.5, h
-        radius = min(cx, h) * 0.9
+        radius = min(cx, h) * SCALE_RATIO
         self.center = QPointF(cx, cy)
         self.radius = radius
 
@@ -274,9 +277,6 @@ class SonarWidget(QWidget):
         pen = QPen(self.foreground_color)
         pen.setWidth(1)
         painter.setPen(pen)
-        font = QFont()
-        font.setPointSize(10)
-        painter.setFont(font)
 
         # 目盛り間隔設定
         if self.range < 10:
@@ -292,7 +292,7 @@ class SonarWidget(QWidget):
             # fall back to computing it here
             cx, cy = self.width()*0.5, self.height()
             self.center = QPointF(cx, cy)
-            self.radius = min(cx, self.height()) * 0.9
+            self.radius = min(cx, self.height()) * SCALE_RATIO
 
         for r_m in range(step, int(self.range)+1, step):
             r_pix = r_m / self.range * self.radius
@@ -332,7 +332,6 @@ class SonarWidget(QWidget):
 
         # Header: datetime (left), range (center), intensities (right)
         painter.setPen(self.foreground_color)
-        painter.setFont(QFont('Arial', 10))
         # datetime
         dt = datetime.fromtimestamp(self.timestamp)
         dt_str = dt.strftime('%Y/%m/%d %H:%M:%S') + f'.{dt.microsecond//1000:03d}'
@@ -344,8 +343,8 @@ class SonarWidget(QWidget):
         w = self.width()
         painter.drawText((w - tw)/2, 20, range_str)
         # intensities
-        min_str = f"MinIntensity={self.min_intensity:.0f}"
-        max_str = f"MaxIntensity={self.max_intensity:.0f}"
+        min_str = f"MinIntensity={self.min_intensity}"
+        max_str = f"MaxIntensity={self.max_intensity}"
         x_min = w - 10 - fm.horizontalAdvance(min_str)
         painter.drawText(x_min, 20, min_str)
         x_max = w - 10 - fm.horizontalAdvance(max_str)
@@ -392,8 +391,8 @@ class SonarPlayer(QWidget):
         # spinboxes and labels
         self.swath_spin = QDoubleSpinBox(); self.swath_spin.setRange(1, 360); self.swath_spin.setValue(args.swath); self.swath_spin.setMaximumWidth(80)
         self.range_spin = QDoubleSpinBox(); self.range_spin.setRange(0, 100); self.range_spin.setValue(args.range); self.range_spin.setMaximumWidth(80)
-        self.min_spin   = QDoubleSpinBox(); self.min_spin.setRange(0, 65535); self.min_spin.setValue(args.min_intensity); self.min_spin.setMaximumWidth(80)
-        self.max_spin   = QDoubleSpinBox(); self.max_spin.setRange(0, 65535); self.max_spin.setValue(args.max_intensity); self.max_spin.setMaximumWidth(80)
+        self.min_spin   = QSpinBox(); self.min_spin.setRange(0, 65535); self.min_spin.setValue(args.min_intensity); self.min_spin.setMaximumWidth(80)
+        self.max_spin   = QSpinBox(); self.max_spin.setRange(0, 65535); self.max_spin.setValue(args.max_intensity); self.max_spin.setMaximumWidth(80)
         for label, spin in [("Swath[deg]",self.swath_spin),("Range[m]",self.range_spin),("MinIntensity",self.min_spin),("MaxIntensity",self.max_spin)]:
             lbl = QLabel(label); lbl.setAlignment(Qt.AlignRight|Qt.AlignVCenter)
             hlay.addWidget(lbl); hlay.addWidget(spin)
@@ -411,6 +410,7 @@ class SonarPlayer(QWidget):
         # slider and status
         self.slider = QSlider(Qt.Horizontal); vlay.addWidget(self.slider)
         self.line = QLineEdit(); self.line.setReadOnly(True)
+        self.line.setText(args.mkv)
         bg = self.palette().color(self.backgroundRole()).name(); self.line.setStyleSheet(f"background-color: {bg};")
         vlay.addWidget(self.line)
         # connections
@@ -433,6 +433,8 @@ class SonarPlayer(QWidget):
         self.max_col_btn.clicked.connect(lambda:self.select_color('max_color',self.max_col_btn) or self.widget.update2())
         self.slider.sliderMoved.connect(self.on_slider_moved)
         self.slider.sliderPressed.connect(self.thread.pause)
+
+        self.on_start()
 
     def select_color(self, attr, button):
         col = getattr(self.widget, attr)
@@ -576,8 +578,5 @@ if __name__=='__main__':
         if not file: sys.exit(0)
         args.mkv = file
     win = SonarPlayer(args)
-    win.line.setText(args.mkv)
-    win.on_start()
-    win.resize(800, 600)
     win.show()
     sys.exit(app.exec_())
