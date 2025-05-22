@@ -12,7 +12,7 @@ from PySide2.QtWidgets import (
     QApplication, QWidget, QVBoxLayout, QHBoxLayout, QColorDialog,
     QPushButton, QSpinBox, QDoubleSpinBox, QLineEdit, QSlider, QFileDialog, QLabel, QStyle
 )
-from PySide2.QtCore import QThread, Signal, Slot, Qt, QRectF, QPointF, QTimer
+from PySide2.QtCore import QThread, Signal, Slot, Qt, QRectF, QPointF, QTimer, QSize
 from PySide2.QtGui import QPainter, QColor, QImage, QPen
 
 
@@ -117,7 +117,6 @@ class SonarThread(QThread):
 class SonarWidget(QWidget):
     def __init__(self):
         super().__init__()
-        self.setMinimumSize(720, 480)
         self.frame = None
         self.base_timestamp = 0.0
         self.timestamp = 0.0
@@ -138,6 +137,12 @@ class SonarWidget(QWidget):
         self.update_timer = QTimer(self)
         self.update_timer.setSingleShot(True)
         self.update_timer.timeout.connect(self.handle_update_timeout)
+
+    def sizeHint(self):
+        return QSize(720, 480)
+
+    def minimumSizeHint(self):
+        return QSize(720, 480)
 
     def set_base_timestamp(self, base_ts):
         self.base_timestamp = base_ts
