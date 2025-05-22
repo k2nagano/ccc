@@ -59,12 +59,12 @@ SonarPlayer::SonarPlayer(const QString& mkvPath, double swath, double range, int
     mpSpinBoxMinIntensity = new QSpinBox;
     mpSpinBoxMaxIntensity = new QSpinBox;
 
-    mpDoubleSpinBoxSwath->setValue(swath);
-    mpDoubleSpinBoxRange->setValue(range);
     mpDoubleSpinBoxSwath->setRange(1.0, 180.0);
     mpDoubleSpinBoxRange->setRange(1.0, 100.0);
     mpSpinBoxMinIntensity->setRange(0, 255);
     mpSpinBoxMaxIntensity->setRange(0, 255);
+    mpDoubleSpinBoxSwath->setValue(swath);
+    mpDoubleSpinBoxRange->setValue(range);
 
     connect(mpDoubleSpinBoxRange, QOverload<double>::of(&QDoubleSpinBox::valueChanged), this,
             [=](double value) {

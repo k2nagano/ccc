@@ -15,6 +15,7 @@ public:
     void setSwath(float swath);
     void setRange(float range);
     virtual QSize sizeHint() const;
+    virtual QSize minimumSizeHint() const;
     void setMinIntensity(int minIntensity);
     void setMaxIntensity(int maxIntensity);
     void setMinIntensityColor(QColor minIntensityColor);
@@ -44,6 +45,7 @@ private:
     QColor mMaxIntensityColor;
     QColor mForegroundColor;
     QColor mBackgroundColor;
+    qint64 mTimestampMillis;
 };
 
 #endif // #if !defined(SONAR_WIDGET_HH)
